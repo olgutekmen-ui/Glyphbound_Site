@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glyphbound: Neon Anthem | Official Universe Hub</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- DESIGN BIBLE VARIABLES --- */
+        :root {
+            --cyan: #00FFFF;
+            --magenta: #FF33CC;
+            --amber: #FFD966;
+            --violet: #A02FFF;
+            --emerald: #50C878;
+            --dark: #0A0A0A;
+            --panel: rgba(10, 10, 10, 0.85);
+            --border: rgba(255, 255, 255, 0.15);
+        }
+        
+        body {
+            background-color: var(--dark);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #000000 100%);
+        }
+
+        h1, h2, h3, h4, .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        
+        /* --- GLOW UTILITIES --- */
+        .neon-text-cyan { text-shadow: 0 0 10px rgba(0, 255, 255, 0.7); }
+        .neon-text-magenta { text-shadow: 0 0 10px rgba(255, 51, 204, 0.7); }
+        .neon-text-amber { text-shadow: 0 0 10px rgba(255, 217, 102, 0.7); }
+        .neon-border-cyan { box-shadow: 0 0 15px var(--cyan), inset 0 0 5px var(--cyan); border: 1px solid var(--cyan); }
+        
+        /* --- UI ELEMENTS --- */
+        .glass-panel {
+            background: rgba(20, 20, 30, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+        }
+
+        .nav-link {
+            position: relative;
+            transition: color 0.3s;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -4px;
+            left: 0;
+            background-color: var(--cyan);
+            transition: width 0.3s;
+            box-shadow: 0 0 8px var(--cyan);
+        }
+        .nav-link:hover::after { width: 100%; }
+
+        /* --- STATIC SATELLITE MAP & TOOLTIPS --- */
+        /* Responsive Wrapper */
+        .map-scaler {
+            transform-origin: center top;
+            transition: transform 0.3s ease;
+        }
+
+        .map-container {
+            position: relative;
+            width: 900px;
+            height: 900px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto;
+        }
+
+        .core-sun {
+            width: 140px; height: 140px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--cyan) 0%, #000 90%);
+            box-shadow: 0 0 80px rgba(0,255,255,0.4);
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse-core 4s ease-in-out infinite;
+        }
+        @keyframes pulse-core {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 60px rgba(0,255,255,0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 0 100px rgba(0,255,255,0.6); }
+        }
+
+        .static-ring {
+            position: absolute;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .ring-1 { width: 400px; height: 400px; }
+        .ring-2 { width: 600px; height: 600px; }
+        .ring-3 { width: 800px; height: 800px; }
+
+        .satellite-node {
+            position: absolute;
+            width: 60px; height: 60px;
+            background: #000;
+            border: 2px solid white;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 30;
+        }
+        .satellite-node:hover, .satellite-node.active { transform: scale(1.2); box-shadow: 0 0 20px white; z-index: 100; }
+        
+        /* TOOLTIP STYLES */
+        .node-tooltip {
+            position: absolute;
+            bottom: 75px; /* Floats above the node */
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            width: 240px;
+            background: rgba(10, 10, 15, 0.95);
+            border: 1px solid white;
+            padding: 12px;
+            border-radius: 4px;
+            text-align: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+            z-index: 101;
+        }
+        
+        /* Arrow for tooltip */
+        .node-tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%) rotate(45deg);
+            width: 10px; height: 10px;
+            background: inherit;
+            border-right: 1px solid white;
+            border-bottom: 1px solid white;
+        }
+
+        .satellite-node:hover .node-tooltip, .satellite-node.active .node-tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Flow Lines Container */
+        .flow-lines-svg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        /* Flow Animation */
+        .flow-path {
+            stroke-dasharray: 10;
+            animation: flow-anim 3s linear infinite;
+        }
+        @keyframes flow-anim {
+            to { stroke-dashoffset: -20; }
+        }
+
+        /* --- ROADMAP STYLES --- */
+        .timeline-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, var(--cyan), var(--magenta), var(--amber));
+            transform: translateX(-50%);
+        }
+        .timeline-node {
+            position: relative;
+            margin-bottom: 3rem;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: 50%;
+            top: 1.5rem;
+            width: 1rem;
+            height: 1rem;
+            background: #000;
+            border: 2px solid white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+        
+        /* --- ARCHIVES TAB SYSTEM --- */
+        .tab-btn {
+            text-align: left;
+            padding: 1rem;
+            width: 100%;
+            border-left: 2px solid transparent;
+            transition: all 0.3s;
+            color: #888;
+        }
+        .tab-btn:hover { background: rgba(255,255,255,0.05); color: white; }
+        .tab-btn.active {
+            border-left: 4px solid var(--cyan);
+            background: linear-gradient(90deg, rgba(0,255,255,0.1), transparent);
+            color: var(--cyan);
+            font-weight: bold;
+        }
+        
+        .lore-card {
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.4);
+            transition: transform 0.3s, border-color 0.3s;
+        }
+        .lore-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--cyan);
+        }
+
+        /* --- GLITCH TITLE --- */
+        .glitch-wrapper { position: relative; display: inline-block; }
+        .glitch { font-size: 5rem; font-weight: 900; line-height: 1; position: relative; color: white; mix-blend-mode: hard-light; }
+        .glitch::before, .glitch::after { content: attr(data-text); position: absolute; top: 0; width: 100%; background: var(--dark); clip: rect(0, 0, 0, 0); }
+        .glitch::before { left: -2px; text-shadow: 2px 0 var(--magenta); animation: glitch-anim-1 2s infinite linear alternate-reverse; }
+        .glitch::after { left: 2px; text-shadow: -2px 0 var(--cyan); animation: glitch-anim-2 3s infinite linear alternate-reverse; }
+        
+        @keyframes glitch-anim-1 { 0% { clip: rect(20px, 9999px, 15px, 0); } 100% { clip: rect(85px, 9999px, 140px, 0); } }
+        @keyframes glitch-anim-2 { 0% { clip: rect(120px, 9999px, 15px, 0); } 100% { clip: rect(10px, 9999px, 120px, 0); } }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--cyan); }
+
+        .hidden-tab { display: none; }
+        .active-tab { display: block; animation: fade-in 0.5s ease; }
+        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div id="video-modal" class="fixed inset-0 z-[100] bg-black/95 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="relative w-full max-w-5xl aspect-video bg-black border border-[var(--cyan)] shadow-[0_0_50px_rgba(0,255,255,0.2)]">
+            <button onclick="closeVideo()" class="absolute -top-10 right-0 text-white hover:text-[var(--cyan)] font-orbitron font-bold flex items-center gap-2">
+                CLOSE [X]
+            </button>
+            <video id="trailer-video" class="w-full h-full" controls>
+                <source src="N-X Dancing.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+    </div>
+
+    <nav class="fixed w-full z-50 glass-panel border-b-0">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <img src="LogoSyncStudios.png" alt="Sync-Dive Studios" class="h-14 w-auto object-contain">
+                <div class="hidden sm:flex flex-col justify-center">
+                    <span class="text-2xl font-black italic tracking-tighter text-white leading-none">SYNC-DIVE</span>
+                    <span class="text-[0.65rem] text-[var(--cyan)] font-orbitron italic tracking-[0.3em] leading-none mt-1">DREAM. DIVE. DISRUPT.</span>
+                </div>
+            </div>
+            
+            <div class="hidden md:flex gap-6">
+                <a href="#hero" class="nav-link font-orbitron text-xs lg:text-sm">TRANSMISSION</a>
+                <a href="#roadmap" class="nav-link font-orbitron text-xs lg:text-sm">ROADMAP</a>
+                <a href="#satellite" class="nav-link font-orbitron text-xs lg:text-sm">DATA FLOW</a>
+                <a href="#archives" class="nav-link font-orbitron text-xs lg:text-sm">ARCHIVES</a>
+                <a href="#greenroom" class="nav-link font-orbitron text-xs lg:text-sm text-[var(--emerald)]">GREEN ROOM</a>
+            </div>
+
+            <button class="bg-[var(--cyan)] text-black font-bold font-orbitron py-2 px-6 hover:shadow-[0_0_20px_var(--cyan)] transition skew-x-[-10deg]">
+                <span class="block skew-x-[10deg]">PRE-REGISTER</span>
+            </button>
+        </div>
+    </nav>
+
+    <section id="hero" class="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
+        <div class="absolute inset-0 z-0">
+            <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1515630278258-407f66498911?q=80&w=2698&auto=format&fit=crop')] bg-cover bg-center opacity-20 mix-blend-overlay"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-[var(--dark)] via-transparent to-[var(--dark)]"></div>
+        </div>
+
+        <div class="relative z-10 text-center px-4">
+            <div class="mb-4 flex justify-center">
+                <span class="px-4 py-1 border border-[var(--cyan)] text-[var(--cyan)] text-xs font-orbitron tracking-[0.3em]">SYSTEM: ONLINE</span>
+            </div>
+            
+            <div class="glitch-wrapper mb-6">
+                <h1 class="glitch text-5xl md:text-8xl" data-text="GLYPHBOUND">GLYPHBOUND</h1>
+            </div>
+            
+            <h2 class="text-3xl md:text-5xl font-orbitron font-light text-white mb-8 tracking-widest">
+                NEON <span class="text-[var(--magenta)] neon-text-magenta font-bold">ANTHEM</span>
+            </h2>
+
+            <p class="max-w-2xl mx-auto text-gray-400 mb-10 text-lg leading-relaxed">
+                The Primordials have awoken. The Glyphs are cracking. <br>
+                Join <strong class="text-white">N-X</strong> in the ultimate Cyberpunk ARPG experience.
+            </p>
+
+            <div class="flex flex-col md:flex-row gap-4 justify-center">
+                <button onclick="openVideo()" class="border border-[var(--magenta)] text-[var(--magenta)] hover:bg-[var(--magenta)] hover:text-black px-8 py-4 font-orbitron font-bold transition duration-300">
+                    WATCH TRAILER
+                </button>
+                <a href="#archives" class="bg-white/5 border border-white/20 hover:bg-white/10 px-8 py-4 font-orbitron font-bold transition duration-300 flex items-center gap-2">
+                    ACCESS DATABASE <i data-lucide="database" class="w-4 h-4"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce text-gray-500">
+            <i data-lucide="chevron-down"></i>
+        </div>
+    </section>
+
+    <section id="roadmap" class="py-24 bg-black relative border-t border-white/10">
+        <div class="max-w-5xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-orbitron font-bold mb-2">THE 10-YEAR <span class="text-[var(--cyan)] neon-text-cyan">PULSE</span></h2>
+                <p class="text-gray-400">Delivering 11 connected titles by 2036.</p>
+            </div>
+
+            <div class="relative py-10">
+                <div class="timeline-line"></div>
+
+                <div class="timeline-node grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div class="md:text-right">
+                        <span class="text-[var(--cyan)] font-orbitron text-xl font-bold">2026</span>
+                    </div>
+                    <div class="timeline-dot shadow-[0_0_10px_var(--cyan)]"></div>
+                    <div class="glass-panel p-6 rounded-lg border-l-4 border-[var(--cyan)]">
+                        <div class="mb-4">
+                            <h4 class="font-orbitron font-bold">Q1: GLYPHLINK PROTOCOL</h4>
+                            <p class="text-sm text-gray-400">Meta-Strategy | Central Hub Launch</p>
+                        </div>
+                        <div>
+                            <h4 class="font-orbitron font-bold">Q3: VYRA: GRID RUN</h4>
+                            <p class="text-sm text-gray-400">Runner | Generates Pulse Energy</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-node grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div class="order-2 md:order-1 glass-panel p-6 rounded-lg border-r-4 border-[var(--violet)] md:text-right">
+                        <div class="mb-4">
+                            <h4 class="font-orbitron font-bold">Q3: IONA'S CIRCUIT DIVE</h4>
+                            <p class="text-sm text-gray-400">Micro-Shooter | Reflex Loop</p>
+                        </div>
+                        <div class="mb-4">
+                            <h4 class="font-orbitron font-bold">Q4: GLYPHS OF HARMONY</h4>
+                            <p class="text-sm text-gray-400">Puzzle | Lore & Harmony Resource</p>
+                        </div>
+                        <div>
+                            <h4 class="font-orbitron font-bold">Q4: N-X OFF STAGE</h4>
+                            <p class="text-sm text-gray-400">Visual Novel | Emotional Bond</p>
+                        </div>
+                    </div>
+                    <div class="order-1 md:order-2 timeline-dot shadow-[0_0_10px_var(--violet)]"></div>
+                    <div class="order-3 md:order-3">
+                        <span class="text-[var(--violet)] font-orbitron text-xl font-bold">2027</span>
+                    </div>
+                </div>
+
+                <div class="timeline-node grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div class="md:text-right">
+                        <span class="text-[var(--magenta)] font-orbitron text-xl font-bold">2028</span>
+                    </div>
+                    <div class="timeline-dot shadow-[0_0_15px_var(--magenta)] bg-white"></div>
+                    <div class="glass-panel p-6 rounded-lg border-l-4 border-[var(--magenta)]">
+                        <div class="mb-4">
+                            <h4 class="font-orbitron font-bold">Q1: STAGE RUSH</h4>
+                            <p class="text-sm text-gray-400">Rhythm | Music Engagement</p>
+                        </div>
+                        <div class="mb-4">
+                            <h4 class="font-orbitron font-bold">Q2: STEM QUIZ & STYLE STUDIO</h4>
+                            <p class="text-sm text-gray-400">Cognitive & Creative Layers</p>
+                        </div>
+                        <div class="bg-[var(--magenta)]/20 p-3 rounded border border-[var(--magenta)]">
+                            <h4 class="font-orbitron font-black text-white">Q3: NEON ANTHEM</h4>
+                            <p class="text-sm text-white font-bold">CORE LAUNCH | ARPG Music Hybrid</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-node grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div class="order-2 md:order-1 glass-panel p-6 rounded-lg border-r-4 border-[var(--amber)] md:text-right">
+                        <div class="mb-4">
+                            <h4 class="font-orbitron font-bold">Q2: ECHO COMPANION</h4>
+                            <p class="text-sm text-gray-400">Virtual Pet AI | Retention Layer</p>
+                        </div>
+                        <div>
+                            <h4 class="font-orbitron font-bold">Q4: GLYPH ARCHITECT</h4>
+                            <p class="text-sm text-gray-400">UGC Sandbox | Community Creation</p>
+                        </div>
+                    </div>
+                    <div class="order-1 md:order-2 timeline-dot shadow-[0_0_10px_var(--amber)]"></div>
+                    <div class="order-3 md:order-3">
+                        <span class="text-[var(--amber)] font-orbitron text-xl font-bold">2029</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <section id="satellite" class="py-24 relative overflow-hidden bg-[#050505]">
+        <div class="absolute inset-0 bg-[linear-gradient(rgba(0,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+        
+        <div class="relative z-10 max-w-7xl mx-auto px-6 text-center">
+            <h2 class="text-3xl font-orbitron font-bold mb-2">INTEGRATION <span class="text-[var(--cyan)] neon-text-cyan">MATRIX</span></h2>
+            <p class="text-gray-400 mb-4">Tap nodes to inspect bidirectional data flow.</p>
+            
+            <div class="overflow-hidden py-10">
+                <div class="map-scaler scale-[0.4] md:scale-75 lg:scale-100 origin-top">
+                    <div class="map-container">
+                        
+                        <svg class="flow-lines-svg" viewBox="0 0 900 900">
+                            <defs>
+                                <marker id="arrow-cyan" markerWidth="10" markerHeight="10" refX="20" refY="3" orient="auto" markerUnits="strokeWidth">
+                                <path d="M0,0 L0,6 L9,3 z" fill="var(--cyan)" />
+                                </marker>
+                                <marker id="arrow-start-cyan" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth">
+                                    <path d="M0,0 L0,6 L9,3 z" fill="var(--cyan)" />
+                                </marker>
+                                
+                                <marker id="arrow-magenta" markerWidth="10" markerHeight="10" refX="20" refY="3" orient="auto" markerUnits="strokeWidth">
+                                <path d="M0,0 L0,6 L9,3 z" fill="var(--magenta)" />
+                                </marker>
+                                <marker id="arrow-start-magenta" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth">
+                                    <path d="M0,0 L0,6 L9,3 z" fill="var(--magenta)" />
+                                </marker>
+
+                                <marker id="arrow-amber" markerWidth="10" markerHeight="10" refX="20" refY="3" orient="auto" markerUnits="strokeWidth">
+                                <path d="M0,0 L0,6 L9,3 z" fill="var(--amber)" />
+                                </marker>
+                                <marker id="arrow-start-amber" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth">
+                                    <path d="M0,0 L0,6 L9,3 z" fill="var(--amber)" />
+                                </marker>
+                            </defs>
+
+                            <line x1="450" y1="200" x2="450" y2="400" stroke="var(--cyan)" stroke-width="2" marker-start="url(#arrow-start-cyan)" marker-end="url(#arrow-cyan)" class="flow-path"/>
+                            <line x1="680" y1="280" x2="480" y2="420" stroke="var(--magenta)" stroke-width="2" marker-start="url(#arrow-start-magenta)" marker-end="url(#arrow-magenta)" class="flow-path"/>
+                            <line x1="220" y1="280" x2="420" y2="420" stroke="var(--cyan)" stroke-width="2" marker-start="url(#arrow-start-cyan)" marker-end="url(#arrow-cyan)" class="flow-path"/>
+                            
+                            <line x1="800" y1="450" x2="520" y2="450" stroke="var(--violet)" stroke-width="2" marker-start="url(#arrow-start-magenta)" marker-end="url(#arrow-magenta)" class="flow-path"/>
+                            <line x1="100" y1="450" x2="380" y2="450" stroke="var(--magenta)" stroke-width="2" marker-start="url(#arrow-start-magenta)" marker-end="url(#arrow-magenta)" class="flow-path"/>
+                            
+                            <line x1="680" y1="620" x2="480" y2="480" stroke="var(--amber)" stroke-width="2" marker-start="url(#arrow-start-amber)" marker-end="url(#arrow-amber)" class="flow-path"/>
+                            <line x1="220" y1="620" x2="420" y2="480" stroke="var(--violet)" stroke-width="2" marker-start="url(#arrow-start-magenta)" marker-end="url(#arrow-magenta)" class="flow-path"/>
+                            
+                            <line x1="450" y1="750" x2="450" y2="520" stroke="var(--cyan)" stroke-width="2" marker-start="url(#arrow-start-cyan)" marker-end="url(#arrow-cyan)" class="flow-path"/>
+                            
+                            <line x1="320" y1="700" x2="420" y2="500" stroke="var(--amber)" stroke-width="2" marker-start="url(#arrow-start-amber)" marker-end="url(#arrow-amber)" class="flow-path"/>
+                            <line x1="580" y1="700" x2="480" y2="500" stroke="var(--violet)" stroke-width="2" marker-start="url(#arrow-start-magenta)" marker-end="url(#arrow-magenta)" class="flow-path"/>
+                        </svg>
+
+                        <div class="core-sun">
+                            <div class="text-center">
+                                <i data-lucide="disc-3" class="w-8 h-8 mx-auto text-white mb-1"></i>
+                                <span class="font-orbitron font-bold text-xs text-black block leading-none">NEON<br>ANTHEM</span>
+                            </div>
+                        </div>
+
+                        <div class="static-ring ring-1"></div>
+                        <div class="static-ring ring-2"></div>
+                        <div class="static-ring ring-3"></div>
+
+                        <div class="satellite-node border-[var(--cyan)] shadow-[0_0_15px_var(--cyan)]" onclick="toggleTooltip(this)" style="top: 200px; left: 450px; transform: translate(-50%, -50%);">
+                            <i data-lucide="zap" class="text-[var(--cyan)]"></i>
+                            <div class="node-tooltip" style="border-color: var(--cyan);">
+                                <h4 class="text-[var(--cyan)] font-orbitron font-bold mb-1">VYRA: GRID RUN</h4>
+                                <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Pulse Energy</span></p>
+                                <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Cosmetics</span></p>
+                            </div>
+                        </div>
+
+                        <div class="satellite-node border-[var(--cyan)]" onclick="toggleTooltip(this)" style="top: 280px; left: 220px; transform: translate(-50%, -50%);">
+                            <i data-lucide="cpu" class="text-[var(--cyan)]"></i>
+                            <div class="node-tooltip" style="border-color: var(--cyan);">
+                                <h4 class="text-[var(--cyan)] font-orbitron font-bold mb-1">CIRCUIT DIVE</h4>
+                                <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Weapon Buffs</span></p>
+                                <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Pulse Energy</span></p>
+                            </div>
+                        </div>
+
+                        <div class="satellite-node border-[var(--magenta)]" onclick="toggleTooltip(this)" style="top: 280px; left: 680px; transform: translate(-50%, -50%);">
+                            <i data-lucide="music" class="text-[var(--magenta)]"></i>
+                            <div class="node-tooltip" style="border-color: var(--magenta);">
+                                <h4 class="text-[var(--magenta)] font-orbitron font-bold mb-1">STAGE RUSH</h4>
+                                <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Fan Energy</span></p>
+                                <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Fame / Cosmetics</span></p>
+                            </div>
+                        </div>
+                        
+                        <div class="satellite-node border-[var(--magenta)]" onclick="toggleTooltip(this)" style="top: 450px; left: 100px; transform: translate(-50%, -50%);">
+                            <i data-lucide="shirt" class="text-[var(--magenta)]"></i>
+                            <div class="node-tooltip" style="border-color: var(--magenta);">
+                                <h4 class="text-[var(--magenta)] font-orbitron font-bold mb-1">STYLE STUDIO</h4>
+                                <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Cosmetics</span></p>
+                                <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Likes / Fans</span></p>
+                            </div>
+                        </div>
+
+                        <div class="satellite-node border-[var(--violet)]" onclick="toggleTooltip(this)" style="top: 450px; left: 800px; transform: translate(-50%, -50%);">
+                            <i data-lucide="pen-tool" class="text-[var(--violet)]"></i>
+                            <div class="node-tooltip" style="border-color: var(--violet);">
+                                <h4 class="text-[var(--violet)] font-orbitron font-bold mb-1">GLYPHS OF HARMONY</h4>
+                                <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Harmony</span></p>
+                                <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Lore Unlocks</span></p>
+                            </div>
+                        </div>
+                        
+                        <div class="satellite-node border-[var(--magenta)]" onclick="toggleTooltip(this)" style="top: 620px; left: 220px; transform: translate(-50%, -50%);">
+                            <i data-lucide="heart" class="text-[var(--magenta)]"></i>
+                            <div class="node-tooltip" style="border-color: var(--magenta);">
+                                <h4 class="text-[var(--magenta)] font-orbitron font-bold mb-1">N-X OFF STAGE</h4>
+                                <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Affinity</span></p>
+                                <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Story Content</span></p>
+                            </div>
+                        </div>
+
+                        <div class="satellite-node border-[var(--amber)]" onclick="toggleTooltip(this)" style="top: 620px; left: 680px; transform: translate(-50%, -50%);">
+                            <i data-lucide="brain" class="text-[var(--amber)]"></i>
+                            <div class="node-tooltip" style="border-color: var(--amber);">
+                                <h4 class="text-[var(--amber)] font-orbitron font-bold mb-1">STEM QUIZ</h4>
+                                <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Aurum</span></p>
+                                <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Knowledge XP</span></p>
+                            </div>
+                        </div>
+
+                        <div class="satellite-node border-[var(--amber)]" onclick="toggleTooltip(this)" style="top: 700px; left: 320px; transform: translate(-50%, -50%);">
+                            <i data-lucide="message-circle-heart" class="text-[var(--amber)]"></i>
+                            <div class="node-tooltip" style="border-color: var(--amber);">
+                                <h4 class="text-[var(--amber)] font-orbitron font-bold mb-1">ECHO COMPANION</h4>
+                                <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Feedback/Affinity</span></p>
+                                <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Daily Rewards</span></p>
+                            </div>
+                        </div>
+
+                        <div class="satellite-node border-[var(--violet)]" onclick="toggleTooltip(this)" style="top: 700px; left: 580px; transform: translate(-50%, -50%);">
+                            <i data-lucide="pencil" class="text-[var(--violet)]"></i>
+                            <div class="node-tooltip" style="border-color: var(--violet);">
+                                <h4 class="text-[var(--violet)] font-orbitron font-bold mb-1">GLYPH ARCHITECT</h4>
+                                <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">UGC Glyphs</span></p>
+                                <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Reputation</span></p>
+                            </div>
+                        </div>
+
+                        <div class="satellite-node border-[var(--cyan)]" onclick="toggleTooltip(this)" style="top: 750px; left: 450px; transform: translate(-50%, -50%);">
+                            <i data-lucide="network" class="text-[var(--cyan)]"></i>
+                            <div class="node-tooltip" style="border-color: var(--cyan);">
+                                <h4 class="text-[var(--cyan)] font-orbitron font-bold mb-1">PROTOCOL HUB</h4>
+                                <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Global Data</span></p>
+                                <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Resource Access</span></p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="archives" class="py-24 bg-[var(--dark)] relative border-t border-white/10">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex items-center justify-between mb-12">
+                <div>
+                    <h2 class="text-3xl font-orbitron font-bold text-white">SYSTEM <span class="text-gray-500">ARCHIVES</span></h2>
+                    <p class="text-[var(--cyan)] font-orbitron text-xs tracking-widest mt-1">ACCESS LEVEL: UNRESTRICTED</p>
+                </div>
+                <div class="hidden md:block w-32 h-1 bg-gradient-to-r from-[var(--cyan)] to-transparent"></div>
+            </div>
+
+            <div class="flex flex-col lg:flex-row gap-8 min-h-[600px]">
+                
+                <div class="w-full lg:w-1/4 glass-panel h-fit rounded-lg overflow-hidden">
+                    <div class="p-4 border-b border-white/10 bg-white/5">
+                        <span class="font-bold text-xs text-gray-400 font-orbitron">DATABASE CATEGORIES</span>
+                    </div>
+                    <nav class="flex flex-col">
+                        <button class="tab-btn active font-orbitron" onclick="switchTab('tab-guardians', this)">THE GUARDIANS (N-X)</button>
+                        <button class="tab-btn font-orbitron" onclick="switchTab('tab-sealers', this)">THE SEALERS & GLYPHS</button>
+                        <button class="tab-btn font-orbitron" onclick="switchTab('tab-threat', this)">THE PRIMORDIAL THREAT</button>
+                    </nav>
+                </div>
+
+                <div class="w-full lg:w-3/4">
+                    
+                    <div id="tab-guardians" class="active-tab">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            
+                            <div class="lore-card rounded-lg overflow-hidden group">
+                                <div class="h-64 overflow-hidden relative">
+                                    <img src="GuardianAelia.png" class="w-full h-full object-cover object-top transition transform group-hover:scale-110" alt="Aelia">
+                                </div>
+                                <div class="p-4">
+                                    <h3 class="text-xl font-orbitron font-bold text-[var(--amber)]">AELIA</h3>
+                                    <p class="text-xs text-gray-400 mb-2">RADIANT VANGUARD</p>
+                                    <p class="text-sm text-gray-300">Wields the Solar Sword. Her platinum hair and golden wings signify the dawn that pierces the darkness.</p>
+                                </div>
+                            </div>
+
+                             <div class="lore-card rounded-lg overflow-hidden group">
+                                <div class="h-64 overflow-hidden relative">
+                                    <img src="GuardianNocta.png" class="w-full h-full object-cover object-top transition transform group-hover:scale-110" alt="Nocta">
+                                </div>
+                                <div class="p-4">
+                                    <h3 class="text-xl font-orbitron font-bold text-blue-400">NOCTA</h3>
+                                    <p class="text-xs text-gray-400 mb-2">LUNAR SENTINEL</p>
+                                    <p class="text-sm text-gray-300">The silent hunter. Her mythic bow and silver arrows strike with the precision of moonlight.</p>
+                                </div>
+                            </div>
+
+                             <div class="lore-card rounded-lg overflow-hidden group">
+                                <div class="h-64 overflow-hidden relative">
+                                    <img src="GuardianVyra.png" class="w-full h-full object-cover object-top transition transform group-hover:scale-110" alt="Vyra">
+                                </div>
+                                <div class="p-4">
+                                    <h3 class="text-xl font-orbitron font-bold text-[var(--magenta)]">VYRA</h3>
+                                    <p class="text-xs text-gray-400 mb-2">KINETIC BLITZ</p>
+                                    <p class="text-sm text-gray-300">Speed is violence. Rides the grid on her hoverboard, dual scimitars flashing in purple and green.</p>
+                                </div>
+                            </div>
+
+                             <div class="lore-card rounded-lg overflow-hidden group">
+                                <div class="h-64 overflow-hidden relative">
+                                    <img src="GuardianIONA.png" class="w-full h-full object-cover object-top transition transform group-hover:scale-110" alt="IONA">
+                                </div>
+                                <div class="p-4">
+                                    <h3 class="text-xl font-orbitron font-bold text-[var(--cyan)]">IONA</h3>
+                                    <p class="text-xs text-gray-400 mb-2">CYPHER DISRUPTOR</p>
+                                    <p class="text-sm text-gray-300">System overload. Her electric discs and hacking skills disrupt the Primordials' code.</p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div id="tab-sealers" class="hidden-tab">
+                        <p class="text-gray-400 mb-6 italic">"Thousands of years ago, the four Sealers bound the chaos. Now, their Glyphs are fading."</p>
+                        <div class="space-y-6">
+                            
+                            <div class="glass-panel p-6 rounded-lg flex flex-col md:flex-row gap-6 items-center">
+                                <div class="relative w-32 h-32 flex-shrink-0">
+                                    <img src="SealerJohwa.png" class="absolute inset-0 w-full h-full object-cover rounded-full border-2 border-blue-400" alt="Johwa">
+                                    <img src="GlyphJohwa.png" class="absolute -bottom-2 -right-2 w-16 h-16 animate-spin-slow" alt="Glyph">
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-orbitron font-bold text-blue-400">JOHWA (HARMONY)</h3>
+                                    <p class="text-sm text-white mb-2">The Sealer of War</p>
+                                    <p class="text-gray-400 text-sm">Embodying balance and order, Johwa's glyph contains the chaotic rage of War. His presence brings a calm resolve to the battlefield.</p>
+                                </div>
+                            </div>
+
+                            <div class="glass-panel p-6 rounded-lg flex flex-col md:flex-row gap-6 items-center">
+                                <div class="relative w-32 h-32 flex-shrink-0">
+                                    <img src="SealerJinri.png" class="absolute inset-0 w-full h-full object-cover rounded-full border-2 border-[var(--magenta)]" alt="Jinri">
+                                    <img src="GlyphJinri.png" class="absolute -bottom-2 -right-2 w-16 h-16 animate-spin-slow" alt="Glyph">
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-orbitron font-bold text-[var(--magenta)]">JINRI (TRUTH)</h3>
+                                    <p class="text-sm text-white mb-2">The Sealer of Deceit</p>
+                                    <p class="text-gray-400 text-sm">Her all-seeing glyph cuts through illusions. Jinri binds the Primordial of Deceit, ensuring reality remains anchored.</p>
+                                </div>
+                            </div>
+
+                            <div class="glass-panel p-6 rounded-lg flex flex-col md:flex-row gap-6 items-center">
+                                <div class="relative w-32 h-32 flex-shrink-0">
+                                    <img src="SealerBari.png" class="absolute inset-0 w-full h-full object-cover rounded-full border-2 border-[var(--emerald)]" alt="Bari">
+                                    <img src="GlyphBari.png" class="absolute -bottom-2 -right-2 w-16 h-16 animate-spin-slow" alt="Glyph">
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-orbitron font-bold text-[var(--emerald)]">BARI (HEALING)</h3>
+                                    <p class="text-sm text-white mb-2">The Sealer of Plague</p>
+                                    <p class="text-gray-400 text-sm">With the power of purification, Bari holds back the biological corruption of the Plague, preserving the life of Neo-Seoul.</p>
+                                </div>
+                            </div>
+
+                             <div class="glass-panel p-6 rounded-lg flex flex-col md:flex-row gap-6 items-center">
+                                <div class="relative w-32 h-32 flex-shrink-0">
+                                    <img src="SealerMireuk.png" class="absolute inset-0 w-full h-full object-cover rounded-full border-2 border-[var(--amber)]" alt="Mireuk">
+                                    <img src="GlyphMireuk.png" class="absolute -bottom-2 -right-2 w-16 h-16 animate-spin-slow" alt="Glyph">
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-orbitron font-bold text-[var(--amber)]">MIREUK (FUTURE)</h3>
+                                    <p class="text-sm text-white mb-2">The Sealer of Greed</p>
+                                    <p class="text-gray-400 text-sm">Mireuk teaches enlightenment over accumulation. His golden light seals the insatiable hunger of the Primordial of Greed.</p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div id="tab-threat" class="hidden-tab">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            
+                            <div class="lore-card rounded-lg overflow-hidden group">
+                                <div class="h-64 overflow-hidden relative"> <img src="PrimordialWar.png" class="w-full h-full object-cover object-top transition transform group-hover:scale-110" alt="War"> <div class="absolute bottom-0 right-0 p-2"><img src="DiscipleWar.png" class="w-16 h-16 rounded border border-red-500" title="Disciple of War"></div>
+                                </div>
+                                <div class="p-4">
+                                    <h3 class="text-xl font-orbitron font-bold text-red-500">PRIMORDIAL OF WAR</h3>
+                                    <p class="text-sm text-gray-400 mt-2">A chaotic force of endless conflict. Its disciples are armored berserkers who thrive on violence.</p>
+                                </div>
+                            </div>
+
+                             <div class="lore-card rounded-lg overflow-hidden group">
+                                <div class="h-64 overflow-hidden relative">
+                                    <img src="PrimordialDeceit.png" class="w-full h-full object-cover object-top transition transform group-hover:scale-110" alt="Deceit">
+                                    <div class="absolute bottom-0 right-0 p-2"><img src="DiscipleDeceit.png" class="w-16 h-16 rounded border border-[var(--magenta)]" title="Disciple of Deceit"></div>
+                                </div>
+                                <div class="p-4">
+                                    <h3 class="text-xl font-orbitron font-bold text-[var(--magenta)]">PRIMORDIAL OF DECEIT</h3>
+                                    <p class="text-sm text-gray-400 mt-2">Master of illusions. It corrupts reality itself, using multi-eyed disciples to sow confusion and paranoia.</p>
+                                </div>
+                            </div>
+
+                             <div class="lore-card rounded-lg overflow-hidden group">
+                                <div class="h-64 overflow-hidden relative">
+                                    <img src="PrimordialPlague.png" class="w-full h-full object-cover object-top transition transform group-hover:scale-110" alt="Plague">
+                                    <div class="absolute bottom-0 right-0 p-2"><img src="DisciplePlague.png" class="w-16 h-16 rounded border border-[var(--emerald)]" title="Disciple of Plague"></div>
+                                </div>
+                                <div class="p-4">
+                                    <h3 class="text-xl font-orbitron font-bold text-[var(--emerald)]">PRIMORDIAL OF PLAGUE</h3>
+                                    <p class="text-sm text-gray-400 mt-2">A bio-digital virus made manifest. It seeks to consume all organic and digital life in Neo-Seoul.</p>
+                                </div>
+                            </div>
+
+                             <div class="lore-card rounded-lg overflow-hidden group">
+                                <div class="h-64 overflow-hidden relative">
+                                    <img src="PrimordialGreed.png" class="w-full h-full object-cover object-top transition transform group-hover:scale-110" alt="Greed">
+                                    <div class="absolute bottom-0 right-0 p-2"><img src="DiscipleGreed.png" class="w-16 h-16 rounded border border-[var(--violet)]" title="Disciple of Greed"></div>
+                                </div>
+                                <div class="p-4">
+                                    <h3 class="text-xl font-orbitron font-bold text-[var(--violet)]">PRIMORDIAL OF GREED</h3>
+                                    <p class="text-sm text-gray-400 mt-2">The hunger for data and power. It hoards resources, creating a black hole of consumption within the city's grid.</p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="greenroom" class="py-12 bg-[#050505] border-t border-white/5 text-center">
+        <div class="max-w-4xl mx-auto px-6">
+            <h3 class="text-2xl font-orbitron font-bold text-[var(--emerald)] mb-4">THE GREEN ROOM</h3>
+            <p class="text-gray-400 text-sm mb-6">Customize your personal space. Collect furniture, invite your Sealers, and relax in the heart of Neo-Seoul. <br> <span class="text-xs text-gray-600">Coming Phase IV</span></p>
+        </div>
+    </section>
+
+    <footer class="bg-black py-12 border-t border-white/10 text-center">
+        <div class="max-w-7xl mx-auto px-6">
+            <span class="text-2xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-[var(--cyan)] to-[var(--magenta)]">
+                SYNC-DIVE
+            </span>
+            <div class="flex justify-center gap-6 my-6 text-gray-500">
+                <a href="#" class="hover:text-white transition"><i data-lucide="twitter"></i></a>
+                <a href="#" class="hover:text-white transition"><i data-lucide="youtube"></i></a>
+                <a href="#" class="hover:text-white transition"><i data-lucide="instagram"></i></a>
+                <a href="#" class="hover:text-white transition"><i data-lucide="disc"></i></a>
+            </div>
+            <p class="text-gray-600 text-xs">
+                © 2025 Sync-Dive Studios AG. All Rights Reserved. <br>
+                Glyphbound: Neon Anthem and the N-X Characters are trademarks of Sync-Dive Studios.
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // VIDEO PLAYER LOGIC
+        function openVideo() {
+            const modal = document.getElementById('video-modal');
+            const video = document.getElementById('trailer-video');
+            modal.classList.remove('hidden');
+            video.play();
+        }
+
+        function closeVideo() {
+            const modal = document.getElementById('video-modal');
+            const video = document.getElementById('trailer-video');
+            modal.classList.add('hidden');
+            video.pause();
+            video.currentTime = 0;
+        }
+
+        // Mobile Tooltip Logic (Touch Toggle)
+        function toggleTooltip(element) {
+            // Remove active class from all other nodes
+            document.querySelectorAll('.satellite-node').forEach(node => {
+                if(node !== element) node.classList.remove('active');
+            });
+            // Toggle active on clicked node
+            element.classList.toggle('active');
+        }
+
+        // Tab Switching Logic
+        function switchTab(tabId, btn) {
+            // Hide all tabs
+            const tabs = ['tab-guardians', 'tab-sealers', 'tab-threat'];
+            tabs.forEach(t => document.getElementById(t).className = 'hidden-tab');
+            
+            // Show selected tab
+            document.getElementById(tabId).className = 'active-tab';
+            
+            // Update buttons
+            const btns = document.querySelectorAll('.tab-btn');
+            btns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+    </script>
+</body>
+</html>
