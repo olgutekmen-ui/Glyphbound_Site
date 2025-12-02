@@ -261,11 +261,7 @@
             <button onclick="closeVideo()" class="absolute -top-10 right-0 text-white hover:text-[var(--cyan)] font-orbitron font-bold flex items-center gap-2">
                 CLOSE [X]
             </button>
-            <video id="trailer-video" class="w-full h-full" controls>
-                <source src="N-X Dancing.mp4" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
-        </div>
+                    </div>
     </div>
 
     <nav class="fixed w-full z-50 glass-panel border-b-0">
@@ -791,23 +787,41 @@
         // Initialize Icons
         lucide.createIcons();
 
-        // VIDEO PLAYER LOGIC
+        // --- VIDEO MODAL LOGIC ---
+        const modal = document.getElementById('video-modal');
+        const video = document.getElementById('trailer-video');
+
         function openVideo() {
-            const modal = document.getElementById('video-modal');
-            const video = document.getElementById('trailer-video');
             modal.classList.remove('hidden');
+            // Ensure video starts from beginning and plays
+            video.currentTime = 0;
             video.play();
         }
 
         function closeVideo() {
-            const modal = document.getElementById('video-modal');
-            const video = document.getElementById('trailer-video');
             modal.classList.add('hidden');
             video.pause();
-            video.currentTime = 0;
+            video.currentTime = 0; // Reset to start
         }
 
-        // Mobile Tooltip Logic (Touch Toggle)
+        // Feature 1: Stop video automatically when it ends (No Looping)
+        video.addEventListener('ended', function() {
+             // Optional: Close modal automatically when video ends
+             // closeVideo(); 
+             
+             // Or just stop it:
+             video.pause();
+        });
+
+        // Feature 2: Close modal when clicking OUTSIDE the video (Works on Chrome Mobile)
+        modal.addEventListener('click', function(event) {
+            // Check if the click happened on the background (the modal div), not the video itself
+            if (event.target === modal) {
+                closeVideo();
+            }
+        });
+
+        // --- MOBILE TOOLTIP LOGIC ---
         function toggleTooltip(element) {
             // Remove active class from all other nodes
             document.querySelectorAll('.satellite-node').forEach(node => {
@@ -817,7 +831,7 @@
             element.classList.toggle('active');
         }
 
-        // Tab Switching Logic
+        // --- TAB SWITCHING LOGIC ---
         function switchTab(tabId, btn) {
             // Hide all tabs
             const tabs = ['tab-guardians', 'tab-sealers', 'tab-threat'];
