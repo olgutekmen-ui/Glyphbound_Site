@@ -38,7 +38,6 @@
         .neon-text-cyan { text-shadow: 0 0 10px rgba(0, 255, 255, 0.7); }
         .neon-text-magenta { text-shadow: 0 0 10px rgba(255, 51, 204, 0.7); }
         .neon-text-amber { text-shadow: 0 0 10px rgba(255, 217, 102, 0.7); }
-        .neon-border-cyan { box-shadow: 0 0 15px var(--cyan), inset 0 0 5px var(--cyan); border: 1px solid var(--cyan); }
         
         /* --- UI ELEMENTS --- */
         .glass-panel {
@@ -64,24 +63,31 @@
         }
         .nav-link:hover::after { width: 100%; }
 
-        /* --- STATIC SATELLITE MAP & TOOLTIPS --- */
-        /* Responsive Wrapper */
+        /* --- SATELLITE MAP (FIXED FOR MOBILE SCROLL) --- */
+        .map-wrapper {
+            overflow-x: auto; /* Allows horizontal scroll on mobile */
+            overflow-y: hidden;
+            width: 100%;
+            -webkit-overflow-scrolling: touch;
+        }
+        
         .map-scaler {
             transform-origin: center top;
             transition: transform 0.3s ease;
+            min-width: 900px; /* Forces full width so it doesn't squish */
         }
 
         .map-container {
             position: relative;
             width: 900px;
             height: 900px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             margin: 0 auto;
         }
 
         .core-sun {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
             width: 140px; height: 140px;
             border-radius: 50%;
             background: radial-gradient(circle, var(--cyan) 0%, #000 90%);
@@ -93,8 +99,8 @@
             animation: pulse-core 4s ease-in-out infinite;
         }
         @keyframes pulse-core {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 60px rgba(0,255,255,0.4); }
-            50% { transform: scale(1.05); box-shadow: 0 0 100px rgba(0,255,255,0.6); }
+            0%, 100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 60px rgba(0,255,255,0.4); }
+            50% { transform: translate(-50%, -50%) scale(1.05); box-shadow: 0 0 100px rgba(0,255,255,0.6); }
         }
 
         .static-ring {
@@ -104,7 +110,6 @@
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
         }
-        
         .ring-1 { width: 400px; height: 400px; }
         .ring-2 { width: 600px; height: 600px; }
         .ring-3 { width: 800px; height: 800px; }
@@ -119,13 +124,14 @@
             cursor: pointer;
             transition: all 0.3s;
             z-index: 30;
+            transform: translate(-50%, -50%); /* Centers the node on its coords */
         }
-        .satellite-node:hover, .satellite-node.active { transform: scale(1.2); box-shadow: 0 0 20px white; z-index: 100; }
+        .satellite-node:hover, .satellite-node.active { transform: translate(-50%, -50%) scale(1.2); box-shadow: 0 0 20px white; z-index: 100; }
         
         /* TOOLTIP STYLES */
         .node-tooltip {
             position: absolute;
-            bottom: 75px; /* Floats above the node */
+            bottom: 75px; 
             left: 50%;
             transform: translateX(-50%) translateY(10px);
             width: 240px;
@@ -136,13 +142,12 @@
             text-align: center;
             opacity: 0;
             visibility: hidden;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.2s ease;
             pointer-events: none;
             box-shadow: 0 10px 25px rgba(0,0,0,0.8);
             z-index: 101;
         }
         
-        /* Arrow for tooltip */
         .node-tooltip::after {
             content: '';
             position: absolute;
@@ -155,13 +160,14 @@
             border-bottom: 1px solid white;
         }
 
-        .satellite-node:hover .node-tooltip, .satellite-node.active .node-tooltip {
+        /* Show tooltip on hover OR active class (for tap) */
+        .satellite-node:hover .node-tooltip, 
+        .satellite-node.active .node-tooltip {
             opacity: 1;
             visibility: visible;
             transform: translateX(-50%) translateY(0);
         }
 
-        /* Flow Lines Container */
         .flow-lines-svg {
             position: absolute;
             top: 0; left: 0;
@@ -170,78 +176,62 @@
             z-index: 10;
         }
         
-        /* Flow Animation */
         .flow-path {
             stroke-dasharray: 10;
             animation: flow-anim 3s linear infinite;
         }
-        @keyframes flow-anim {
-            to { stroke-dashoffset: -20; }
-        }
+        @keyframes flow-anim { to { stroke-dashoffset: -20; } }
 
-        /* --- ROADMAP STYLES --- */
+        /* --- ROADMAP STYLES (MOBILE RESPONSIVE) --- */
         .timeline-line {
             position: absolute;
-            left: 50%;
-            top: 0;
-            bottom: 0;
+            left: 20px; /* Mobile: Stick to left */
+            top: 0; bottom: 0;
             width: 2px;
             background: linear-gradient(180deg, var(--cyan), var(--magenta), var(--amber));
-            transform: translateX(-50%);
         }
-        .timeline-node {
-            position: relative;
-            margin-bottom: 3rem;
+        /* Desktop override */
+        @media (min-width: 768px) {
+            .timeline-line { left: 50%; transform: translateX(-50%); }
         }
+
         .timeline-dot {
             position: absolute;
-            left: 50%;
+            left: 20px; /* Mobile: Match line */
             top: 1.5rem;
-            width: 1rem;
-            height: 1rem;
+            width: 1rem; height: 1rem;
             background: #000;
             border: 2px solid white;
             border-radius: 50%;
             transform: translate(-50%, -50%);
             z-index: 10;
         }
-        
-        /* --- ARCHIVES TAB SYSTEM --- */
-        .tab-btn {
-            text-align: left;
-            padding: 1rem;
-            width: 100%;
-            border-left: 2px solid transparent;
-            transition: all 0.3s;
-            color: #888;
-        }
-        .tab-btn:hover { background: rgba(255,255,255,0.05); color: white; }
-        .tab-btn.active {
-            border-left: 4px solid var(--cyan);
-            background: linear-gradient(90deg, rgba(0,255,255,0.1), transparent);
-            color: var(--cyan);
-            font-weight: bold;
-        }
-        
-        .lore-card {
-            border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(0,0,0,0.4);
-            transition: transform 0.3s, border-color 0.3s;
-        }
-        .lore-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--cyan);
+        @media (min-width: 768px) {
+            .timeline-dot { left: 50%; }
         }
 
         /* --- GLITCH TITLE --- */
         .glitch-wrapper { position: relative; display: inline-block; }
-        .glitch { font-size: 5rem; font-weight: 900; line-height: 1; position: relative; color: white; mix-blend-mode: hard-light; }
+        .glitch { font-size: 3rem; font-weight: 900; line-height: 1; position: relative; color: white; mix-blend-mode: hard-light; }
+        @media (min-width: 768px) { .glitch { font-size: 5rem; } }
+
         .glitch::before, .glitch::after { content: attr(data-text); position: absolute; top: 0; width: 100%; background: var(--dark); clip: rect(0, 0, 0, 0); }
         .glitch::before { left: -2px; text-shadow: 2px 0 var(--magenta); animation: glitch-anim-1 2s infinite linear alternate-reverse; }
         .glitch::after { left: 2px; text-shadow: -2px 0 var(--cyan); animation: glitch-anim-2 3s infinite linear alternate-reverse; }
         
         @keyframes glitch-anim-1 { 0% { clip: rect(20px, 9999px, 15px, 0); } 100% { clip: rect(85px, 9999px, 140px, 0); } }
         @keyframes glitch-anim-2 { 0% { clip: rect(120px, 9999px, 15px, 0); } 100% { clip: rect(10px, 9999px, 120px, 0); } }
+
+        /* --- SCROLL TO TOP BUTTON --- */
+        #scrollTopBtn {
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+        #scrollTopBtn.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
 
         /* Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
@@ -261,7 +251,11 @@
             <button onclick="closeVideo()" class="absolute -top-10 right-0 text-white hover:text-[var(--cyan)] font-orbitron font-bold flex items-center gap-2">
                 CLOSE [X]
             </button>
-                    </div>
+            <video id="trailer-video" class="w-full h-full" controls playsinline>
+                <source src="N-X Dancing.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
     </div>
 
     <nav class="fixed w-full z-50 glass-panel border-b-0">
@@ -300,7 +294,7 @@
             </div>
             
             <div class="glitch-wrapper mb-6">
-                <h1 class="glitch text-5xl md:text-8xl" data-text="GLYPHBOUND">GLYPHBOUND</h1>
+                <h1 class="glitch" data-text="GLYPHBOUND">GLYPHBOUND</h1>
             </div>
             
             <h2 class="text-3xl md:text-5xl font-orbitron font-light text-white mb-8 tracking-widest">
@@ -337,7 +331,7 @@
             <div class="relative py-10">
                 <div class="timeline-line"></div>
 
-                <div class="timeline-node grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div class="timeline-node grid grid-cols-1 md:grid-cols-2 gap-8 items-center pl-10 md:pl-0">
                     <div class="md:text-right">
                         <span class="text-[var(--cyan)] font-orbitron text-xl font-bold">2026</span>
                     </div>
@@ -354,8 +348,8 @@
                     </div>
                 </div>
 
-                <div class="timeline-node grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                    <div class="order-2 md:order-1 glass-panel p-6 rounded-lg border-r-4 border-[var(--violet)] md:text-right">
+                <div class="timeline-node grid grid-cols-1 md:grid-cols-2 gap-8 items-center pl-10 md:pl-0">
+                    <div class="order-2 md:order-1 glass-panel p-6 rounded-lg border-r-0 border-l-4 md:border-l-0 md:border-r-4 border-[var(--violet)] md:text-right">
                         <div class="mb-4">
                             <h4 class="font-orbitron font-bold">IONA'S CIRCUIT DIVE</h4>
                             <p class="text-sm text-gray-400">Micro-Shooter</p>
@@ -375,7 +369,7 @@
                     </div>
                 </div>
 
-                <div class="timeline-node grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div class="timeline-node grid grid-cols-1 md:grid-cols-2 gap-8 items-center pl-10 md:pl-0">
                     <div class="md:text-right">
                         <span class="text-[var(--magenta)] font-orbitron text-xl font-bold">2028</span>
                     </div>
@@ -396,8 +390,8 @@
                     </div>
                 </div>
 
-                <div class="timeline-node grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                    <div class="order-2 md:order-1 glass-panel p-6 rounded-lg border-r-4 border-[var(--amber)] md:text-right">
+                <div class="timeline-node grid grid-cols-1 md:grid-cols-2 gap-8 items-center pl-10 md:pl-0">
+                    <div class="order-2 md:order-1 glass-panel p-6 rounded-lg border-r-0 border-l-4 md:border-l-0 md:border-r-4 border-[var(--amber)] md:text-right">
                         <div class="mb-4">
                             <h4 class="font-orbitron font-bold">ECHO COMPANION</h4>
                             <p class="text-sm text-gray-400">Virtual Pet AI</p>
@@ -417,7 +411,7 @@
         </div>
     </section>
 
-    <section id="satellite" class="py-24 relative overflow-hidden bg-[#050505]">
+    <section id="satellite" class="pt-24 pb-12 relative overflow-hidden bg-[#050505]">
         <div class="absolute inset-0 bg-[linear-gradient(rgba(0,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
         
         <div class="relative z-10 max-w-7xl mx-auto px-6 text-center">
@@ -425,157 +419,159 @@
             <p class="text-gray-400 mb-4">Tap nodes to inspect bidirectional data flow.</p>
             
             <div class="overflow-hidden py-10">
-                <div class="map-scaler scale-[0.4] md:scale-75 lg:scale-100 origin-top">
-                    <div class="map-container">
-                        
-                        <svg class="flow-lines-svg" viewBox="0 0 900 900">
-                            <defs>
-                                <marker id="arrow-cyan" markerWidth="10" markerHeight="10" refX="20" refY="3" orient="auto" markerUnits="strokeWidth">
-                                <path d="M0,0 L0,6 L9,3 z" fill="var(--cyan)" />
-                                </marker>
-                                <marker id="arrow-start-cyan" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth">
+                <div class="map-wrapper">
+                    <div class="map-scaler origin-top md:origin-center scale-[0.5] md:scale-75 lg:scale-100">
+                        <div class="map-container">
+                            
+                            <svg class="flow-lines-svg" viewBox="0 0 900 900">
+                                <defs>
+                                    <marker id="arrow-cyan" markerWidth="10" markerHeight="10" refX="20" refY="3" orient="auto" markerUnits="strokeWidth">
                                     <path d="M0,0 L0,6 L9,3 z" fill="var(--cyan)" />
-                                </marker>
-                                
-                                <marker id="arrow-magenta" markerWidth="10" markerHeight="10" refX="20" refY="3" orient="auto" markerUnits="strokeWidth">
-                                <path d="M0,0 L0,6 L9,3 z" fill="var(--magenta)" />
-                                </marker>
-                                <marker id="arrow-start-magenta" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth">
+                                    </marker>
+                                    <marker id="arrow-start-cyan" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth">
+                                        <path d="M0,0 L0,6 L9,3 z" fill="var(--cyan)" />
+                                    </marker>
+                                    
+                                    <marker id="arrow-magenta" markerWidth="10" markerHeight="10" refX="20" refY="3" orient="auto" markerUnits="strokeWidth">
                                     <path d="M0,0 L0,6 L9,3 z" fill="var(--magenta)" />
-                                </marker>
+                                    </marker>
+                                    <marker id="arrow-start-magenta" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth">
+                                        <path d="M0,0 L0,6 L9,3 z" fill="var(--magenta)" />
+                                    </marker>
 
-                                <marker id="arrow-amber" markerWidth="10" markerHeight="10" refX="20" refY="3" orient="auto" markerUnits="strokeWidth">
-                                <path d="M0,0 L0,6 L9,3 z" fill="var(--amber)" />
-                                </marker>
-                                <marker id="arrow-start-amber" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth">
+                                    <marker id="arrow-amber" markerWidth="10" markerHeight="10" refX="20" refY="3" orient="auto" markerUnits="strokeWidth">
                                     <path d="M0,0 L0,6 L9,3 z" fill="var(--amber)" />
-                                </marker>
-                            </defs>
+                                    </marker>
+                                    <marker id="arrow-start-amber" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth">
+                                        <path d="M0,0 L0,6 L9,3 z" fill="var(--amber)" />
+                                    </marker>
+                                </defs>
 
-                            <line x1="450" y1="200" x2="450" y2="400" stroke="var(--cyan)" stroke-width="2" marker-start="url(#arrow-start-cyan)" marker-end="url(#arrow-cyan)" class="flow-path"/>
-                            <line x1="680" y1="280" x2="480" y2="420" stroke="var(--magenta)" stroke-width="2" marker-start="url(#arrow-start-magenta)" marker-end="url(#arrow-magenta)" class="flow-path"/>
-                            <line x1="220" y1="280" x2="420" y2="420" stroke="var(--cyan)" stroke-width="2" marker-start="url(#arrow-start-cyan)" marker-end="url(#arrow-cyan)" class="flow-path"/>
+                                <line x1="450" y1="200" x2="450" y2="400" stroke="var(--cyan)" stroke-width="2" marker-start="url(#arrow-start-cyan)" marker-end="url(#arrow-cyan)" class="flow-path"/>
+                                <line x1="680" y1="280" x2="480" y2="420" stroke="var(--magenta)" stroke-width="2" marker-start="url(#arrow-start-magenta)" marker-end="url(#arrow-magenta)" class="flow-path"/>
+                                <line x1="220" y1="280" x2="420" y2="420" stroke="var(--cyan)" stroke-width="2" marker-start="url(#arrow-start-cyan)" marker-end="url(#arrow-cyan)" class="flow-path"/>
+                                
+                                <line x1="800" y1="450" x2="520" y2="450" stroke="var(--violet)" stroke-width="2" marker-start="url(#arrow-start-magenta)" marker-end="url(#arrow-magenta)" class="flow-path"/>
+                                <line x1="100" y1="450" x2="380" y2="450" stroke="var(--magenta)" stroke-width="2" marker-start="url(#arrow-start-magenta)" marker-end="url(#arrow-magenta)" class="flow-path"/>
+                                
+                                <line x1="680" y1="620" x2="480" y2="480" stroke="var(--amber)" stroke-width="2" marker-start="url(#arrow-start-amber)" marker-end="url(#arrow-amber)" class="flow-path"/>
+                                <line x1="220" y1="620" x2="420" y2="480" stroke="var(--violet)" stroke-width="2" marker-start="url(#arrow-start-magenta)" marker-end="url(#arrow-magenta)" class="flow-path"/>
+                                
+                                <line x1="450" y1="750" x2="450" y2="520" stroke="var(--cyan)" stroke-width="2" marker-start="url(#arrow-start-cyan)" marker-end="url(#arrow-cyan)" class="flow-path"/>
+                                
+                                <line x1="320" y1="700" x2="420" y2="500" stroke="var(--amber)" stroke-width="2" marker-start="url(#arrow-start-amber)" marker-end="url(#arrow-amber)" class="flow-path"/>
+                                <line x1="580" y1="700" x2="480" y2="500" stroke="var(--violet)" stroke-width="2" marker-start="url(#arrow-start-magenta)" marker-end="url(#arrow-magenta)" class="flow-path"/>
+                            </svg>
+
+                            <div class="core-sun">
+                                <div class="text-center">
+                                    <i data-lucide="disc-3" class="w-8 h-8 mx-auto text-white mb-1"></i>
+                                    <span class="font-orbitron font-bold text-xs text-black block leading-none">NEON<br>ANTHEM</span>
+                                </div>
+                            </div>
+
+                            <div class="static-ring ring-1"></div>
+                            <div class="static-ring ring-2"></div>
+                            <div class="static-ring ring-3"></div>
+
+                            <div class="satellite-node border-[var(--cyan)] shadow-[0_0_15px_var(--cyan)]" onclick="toggleTooltip(this)" style="top: 200px; left: 450px;">
+                                <i data-lucide="zap" class="text-[var(--cyan)]"></i>
+                                <div class="node-tooltip" style="border-color: var(--cyan);">
+                                    <h4 class="text-[var(--cyan)] font-orbitron font-bold mb-1">VYRA: GRID RUN</h4>
+                                    <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Pulse Energy</span></p>
+                                    <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Cosmetics</span></p>
+                                </div>
+                            </div>
+
+                            <div class="satellite-node border-[var(--cyan)]" onclick="toggleTooltip(this)" style="top: 280px; left: 220px;">
+                                <i data-lucide="cpu" class="text-[var(--cyan)]"></i>
+                                <div class="node-tooltip" style="border-color: var(--cyan);">
+                                    <h4 class="text-[var(--cyan)] font-orbitron font-bold mb-1">CIRCUIT DIVE</h4>
+                                    <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Weapon Buffs</span></p>
+                                    <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Pulse Energy</span></p>
+                                </div>
+                            </div>
+
+                            <div class="satellite-node border-[var(--magenta)]" onclick="toggleTooltip(this)" style="top: 280px; left: 680px;">
+                                <i data-lucide="music" class="text-[var(--magenta)]"></i>
+                                <div class="node-tooltip" style="border-color: var(--magenta);">
+                                    <h4 class="text-[var(--magenta)] font-orbitron font-bold mb-1">STAGE RUSH</h4>
+                                    <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Fan Energy</span></p>
+                                    <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Fame / Cosmetics</span></p>
+                                </div>
+                            </div>
                             
-                            <line x1="800" y1="450" x2="520" y2="450" stroke="var(--violet)" stroke-width="2" marker-start="url(#arrow-start-magenta)" marker-end="url(#arrow-magenta)" class="flow-path"/>
-                            <line x1="100" y1="450" x2="380" y2="450" stroke="var(--magenta)" stroke-width="2" marker-start="url(#arrow-start-magenta)" marker-end="url(#arrow-magenta)" class="flow-path"/>
+                            <div class="satellite-node border-[var(--magenta)]" onclick="toggleTooltip(this)" style="top: 450px; left: 100px;">
+                                <i data-lucide="shirt" class="text-[var(--magenta)]"></i>
+                                <div class="node-tooltip" style="border-color: var(--magenta);">
+                                    <h4 class="text-[var(--magenta)] font-orbitron font-bold mb-1">STYLE STUDIO</h4>
+                                    <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Cosmetics</span></p>
+                                    <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Likes / Fans</span></p>
+                                </div>
+                            </div>
+
+                            <div class="satellite-node border-[var(--violet)]" onclick="toggleTooltip(this)" style="top: 450px; left: 800px;">
+                                <i data-lucide="pen-tool" class="text-[var(--violet)]"></i>
+                                <div class="node-tooltip" style="border-color: var(--violet);">
+                                    <h4 class="text-[var(--violet)] font-orbitron font-bold mb-1">GLYPHS OF HARMONY</h4>
+                                    <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Harmony</span></p>
+                                    <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Lore Unlocks</span></p>
+                                </div>
+                            </div>
                             
-                            <line x1="680" y1="620" x2="480" y2="480" stroke="var(--amber)" stroke-width="2" marker-start="url(#arrow-start-amber)" marker-end="url(#arrow-amber)" class="flow-path"/>
-                            <line x1="220" y1="620" x2="420" y2="480" stroke="var(--violet)" stroke-width="2" marker-start="url(#arrow-start-magenta)" marker-end="url(#arrow-magenta)" class="flow-path"/>
-                            
-                            <line x1="450" y1="750" x2="450" y2="520" stroke="var(--cyan)" stroke-width="2" marker-start="url(#arrow-start-cyan)" marker-end="url(#arrow-cyan)" class="flow-path"/>
-                            
-                            <line x1="320" y1="700" x2="420" y2="500" stroke="var(--amber)" stroke-width="2" marker-start="url(#arrow-start-amber)" marker-end="url(#arrow-amber)" class="flow-path"/>
-                            <line x1="580" y1="700" x2="480" y2="500" stroke="var(--violet)" stroke-width="2" marker-start="url(#arrow-start-magenta)" marker-end="url(#arrow-magenta)" class="flow-path"/>
-                        </svg>
-
-                        <div class="core-sun">
-                            <div class="text-center">
-                                <i data-lucide="disc-3" class="w-8 h-8 mx-auto text-white mb-1"></i>
-                                <span class="font-orbitron font-bold text-xs text-black block leading-none">NEON<br>ANTHEM</span>
+                            <div class="satellite-node border-[var(--magenta)]" onclick="toggleTooltip(this)" style="top: 620px; left: 220px;">
+                                <i data-lucide="heart" class="text-[var(--magenta)]"></i>
+                                <div class="node-tooltip" style="border-color: var(--magenta);">
+                                    <h4 class="text-[var(--magenta)] font-orbitron font-bold mb-1">N-X OFF STAGE</h4>
+                                    <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Affinity</span></p>
+                                    <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Story Content</span></p>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="static-ring ring-1"></div>
-                        <div class="static-ring ring-2"></div>
-                        <div class="static-ring ring-3"></div>
+                            <div class="satellite-node border-[var(--amber)]" onclick="toggleTooltip(this)" style="top: 620px; left: 680px;">
+                                <i data-lucide="brain" class="text-[var(--amber)]"></i>
+                                <div class="node-tooltip" style="border-color: var(--amber);">
+                                    <h4 class="text-[var(--amber)] font-orbitron font-bold mb-1">STEM QUIZ</h4>
+                                    <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Aurum</span></p>
+                                    <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Knowledge XP</span></p>
+                                </div>
+                            </div>
 
-                        <div class="satellite-node border-[var(--cyan)] shadow-[0_0_15px_var(--cyan)]" onclick="toggleTooltip(this)" style="top: 200px; left: 450px; transform: translate(-50%, -50%);">
-                            <i data-lucide="zap" class="text-[var(--cyan)]"></i>
-                            <div class="node-tooltip" style="border-color: var(--cyan);">
-                                <h4 class="text-[var(--cyan)] font-orbitron font-bold mb-1">VYRA: GRID RUN</h4>
-                                <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Pulse Energy</span></p>
-                                <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Cosmetics</span></p>
+                            <div class="satellite-node border-[var(--amber)]" onclick="toggleTooltip(this)" style="top: 700px; left: 320px;">
+                                <i data-lucide="message-circle-heart" class="text-[var(--amber)]"></i>
+                                <div class="node-tooltip" style="border-color: var(--amber);">
+                                    <h4 class="text-[var(--amber)] font-orbitron font-bold mb-1">ECHO COMPANION</h4>
+                                    <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Feedback/Affinity</span></p>
+                                    <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Daily Rewards</span></p>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="satellite-node border-[var(--cyan)]" onclick="toggleTooltip(this)" style="top: 280px; left: 220px; transform: translate(-50%, -50%);">
-                            <i data-lucide="cpu" class="text-[var(--cyan)]"></i>
-                            <div class="node-tooltip" style="border-color: var(--cyan);">
-                                <h4 class="text-[var(--cyan)] font-orbitron font-bold mb-1">CIRCUIT DIVE</h4>
-                                <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Weapon Buffs</span></p>
-                                <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Pulse Energy</span></p>
+                            <div class="satellite-node border-[var(--violet)]" onclick="toggleTooltip(this)" style="top: 700px; left: 580px;">
+                                <i data-lucide="pencil" class="text-[var(--violet)]"></i>
+                                <div class="node-tooltip" style="border-color: var(--violet);">
+                                    <h4 class="text-[var(--violet)] font-orbitron font-bold mb-1">GLYPH ARCHITECT</h4>
+                                    <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">UGC Glyphs</span></p>
+                                    <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Reputation</span></p>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="satellite-node border-[var(--magenta)]" onclick="toggleTooltip(this)" style="top: 280px; left: 680px; transform: translate(-50%, -50%);">
-                            <i data-lucide="music" class="text-[var(--magenta)]"></i>
-                            <div class="node-tooltip" style="border-color: var(--magenta);">
-                                <h4 class="text-[var(--magenta)] font-orbitron font-bold mb-1">STAGE RUSH</h4>
-                                <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Fan Energy</span></p>
-                                <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Fame / Cosmetics</span></p>
+                            <div class="satellite-node border-[var(--cyan)]" onclick="toggleTooltip(this)" style="top: 750px; left: 450px;">
+                                <i data-lucide="network" class="text-[var(--cyan)]"></i>
+                                <div class="node-tooltip" style="border-color: var(--cyan);">
+                                    <h4 class="text-[var(--cyan)] font-orbitron font-bold mb-1">PROTOCOL HUB</h4>
+                                    <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Global Data</span></p>
+                                    <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Resource Access</span></p>
+                                </div>
                             </div>
-                        </div>
-                        
-                        <div class="satellite-node border-[var(--magenta)]" onclick="toggleTooltip(this)" style="top: 450px; left: 100px; transform: translate(-50%, -50%);">
-                            <i data-lucide="shirt" class="text-[var(--magenta)]"></i>
-                            <div class="node-tooltip" style="border-color: var(--magenta);">
-                                <h4 class="text-[var(--magenta)] font-orbitron font-bold mb-1">STYLE STUDIO</h4>
-                                <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Cosmetics</span></p>
-                                <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Likes / Fans</span></p>
-                            </div>
-                        </div>
 
-                        <div class="satellite-node border-[var(--violet)]" onclick="toggleTooltip(this)" style="top: 450px; left: 800px; transform: translate(-50%, -50%);">
-                            <i data-lucide="pen-tool" class="text-[var(--violet)]"></i>
-                            <div class="node-tooltip" style="border-color: var(--violet);">
-                                <h4 class="text-[var(--violet)] font-orbitron font-bold mb-1">GLYPHS OF HARMONY</h4>
-                                <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Harmony</span></p>
-                                <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Lore Unlocks</span></p>
-                            </div>
                         </div>
-                        
-                        <div class="satellite-node border-[var(--magenta)]" onclick="toggleTooltip(this)" style="top: 620px; left: 220px; transform: translate(-50%, -50%);">
-                            <i data-lucide="heart" class="text-[var(--magenta)]"></i>
-                            <div class="node-tooltip" style="border-color: var(--magenta);">
-                                <h4 class="text-[var(--magenta)] font-orbitron font-bold mb-1">N-X OFF STAGE</h4>
-                                <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Affinity</span></p>
-                                <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Story Content</span></p>
-                            </div>
-                        </div>
-
-                        <div class="satellite-node border-[var(--amber)]" onclick="toggleTooltip(this)" style="top: 620px; left: 680px; transform: translate(-50%, -50%);">
-                            <i data-lucide="brain" class="text-[var(--amber)]"></i>
-                            <div class="node-tooltip" style="border-color: var(--amber);">
-                                <h4 class="text-[var(--amber)] font-orbitron font-bold mb-1">STEM QUIZ</h4>
-                                <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Aurum</span></p>
-                                <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Knowledge XP</span></p>
-                            </div>
-                        </div>
-
-                        <div class="satellite-node border-[var(--amber)]" onclick="toggleTooltip(this)" style="top: 700px; left: 320px; transform: translate(-50%, -50%);">
-                            <i data-lucide="message-circle-heart" class="text-[var(--amber)]"></i>
-                            <div class="node-tooltip" style="border-color: var(--amber);">
-                                <h4 class="text-[var(--amber)] font-orbitron font-bold mb-1">ECHO COMPANION</h4>
-                                <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Feedback/Affinity</span></p>
-                                <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Daily Rewards</span></p>
-                            </div>
-                        </div>
-
-                        <div class="satellite-node border-[var(--violet)]" onclick="toggleTooltip(this)" style="top: 700px; left: 580px; transform: translate(-50%, -50%);">
-                            <i data-lucide="pencil" class="text-[var(--violet)]"></i>
-                            <div class="node-tooltip" style="border-color: var(--violet);">
-                                <h4 class="text-[var(--violet)] font-orbitron font-bold mb-1">GLYPH ARCHITECT</h4>
-                                <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">UGC Glyphs</span></p>
-                                <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Reputation</span></p>
-                            </div>
-                        </div>
-
-                        <div class="satellite-node border-[var(--cyan)]" onclick="toggleTooltip(this)" style="top: 750px; left: 450px; transform: translate(-50%, -50%);">
-                            <i data-lucide="network" class="text-[var(--cyan)]"></i>
-                            <div class="node-tooltip" style="border-color: var(--cyan);">
-                                <h4 class="text-[var(--cyan)] font-orbitron font-bold mb-1">PROTOCOL HUB</h4>
-                                <p class="text-xs text-gray-300 font-inter border-b border-gray-700 pb-1 mb-1">GIVES: <span class="text-white">Global Data</span></p>
-                                <p class="text-xs text-gray-300 font-inter">RECEIVES: <span class="text-white">Resource Access</span></p>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="archives" class="py-24 bg-[var(--dark)] relative border-t border-white/10">
+    <section id="archives" class="py-12 bg-[var(--dark)] relative border-t border-white/10">
         <div class="max-w-7xl mx-auto px-6">
             <div class="flex items-center justify-between mb-12">
                 <div>
@@ -709,7 +705,9 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             
                             <div class="lore-card rounded-lg overflow-hidden group">
-                                <div class="h-64 overflow-hidden relative"> <img src="PrimordialWar.png" class="w-full h-full object-cover object-top transition transform group-hover:scale-110" alt="War"> <div class="absolute bottom-0 right-0 p-2"><img src="DiscipleWar.png" class="w-16 h-16 rounded border border-red-500" title="Disciple of War"></div>
+                                <div class="h-64 overflow-hidden relative">
+                                    <img src="PrimordialWar.png" class="w-full h-full object-cover object-top transition transform group-hover:scale-110" alt="War">
+                                    <div class="absolute bottom-0 right-0 p-2"><img src="DiscipleWar.png" class="w-16 h-16 rounded border border-red-500" title="Disciple of War"></div>
                                 </div>
                                 <div class="p-4">
                                     <h3 class="text-xl font-orbitron font-bold text-red-500">PRIMORDIAL OF WAR</h3>
@@ -783,6 +781,10 @@
         </div>
     </footer>
 
+    <button id="scrollTopBtn" onclick="scrollToTop()" class="fixed bottom-6 right-6 z-50 bg-[var(--cyan)] text-black p-3 rounded-sm shadow-[0_0_15px_var(--cyan)] hover:bg-white transition-all">
+        <i data-lucide="arrow-up" class="w-6 h-6"></i>
+    </button>
+
     <script>
         // Initialize Icons
         lucide.createIcons();
@@ -793,7 +795,6 @@
 
         function openVideo() {
             modal.classList.remove('hidden');
-            // Ensure video starts from beginning and plays
             video.currentTime = 0;
             video.play();
         }
@@ -801,21 +802,16 @@
         function closeVideo() {
             modal.classList.add('hidden');
             video.pause();
-            video.currentTime = 0; // Reset to start
+            video.currentTime = 0; 
         }
 
-        // Feature 1: Stop video automatically when it ends (No Looping)
+        // Stop video automatically when it ends
         video.addEventListener('ended', function() {
-             // Optional: Close modal automatically when video ends
-             // closeVideo(); 
-             
-             // Or just stop it:
              video.pause();
         });
 
-        // Feature 2: Close modal when clicking OUTSIDE the video (Works on Chrome Mobile)
+        // Close modal when clicking OUTSIDE the video
         modal.addEventListener('click', function(event) {
-            // Check if the click happened on the background (the modal div), not the video itself
             if (event.target === modal) {
                 closeVideo();
             }
@@ -833,17 +829,27 @@
 
         // --- TAB SWITCHING LOGIC ---
         function switchTab(tabId, btn) {
-            // Hide all tabs
             const tabs = ['tab-guardians', 'tab-sealers', 'tab-threat'];
             tabs.forEach(t => document.getElementById(t).className = 'hidden-tab');
-            
-            // Show selected tab
             document.getElementById(tabId).className = 'active-tab';
-            
-            // Update buttons
             const btns = document.querySelectorAll('.tab-btn');
             btns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+        }
+
+        // --- SCROLL TO TOP LOGIC ---
+        const scrollBtn = document.getElementById('scrollTopBtn');
+        
+        window.onscroll = function() {
+            if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+                scrollBtn.classList.add('visible');
+            } else {
+                scrollBtn.classList.remove('visible');
+            }
+        };
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     </script>
 </body>
