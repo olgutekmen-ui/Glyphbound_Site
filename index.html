@@ -63,25 +63,31 @@
         }
         .nav-link:hover::after { width: 100%; }
 
-        /* --- SATELLITE MAP (FIXED FOR MOBILE SCROLL) --- */
+        /* --- SATELLITE MAP (CENTERED SCROLL FIX) --- */
         .map-wrapper {
-            overflow-x: auto; /* Allows horizontal scroll on mobile */
+            overflow-x: auto;
             overflow-y: hidden;
             width: 100%;
             -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE */
+            position: relative;
         }
+        .map-wrapper::-webkit-scrollbar { display: none; /* Chrome/Safari */ }
         
         .map-scaler {
             transform-origin: center top;
             transition: transform 0.3s ease;
-            min-width: 900px; /* Forces full width so it doesn't squish */
+            min-width: 900px;
+            display: flex;
+            justify-content: center; /* Flex center children */
         }
 
         .map-container {
             position: relative;
             width: 900px;
             height: 900px;
-            margin: 0 auto;
+            flex-shrink: 0; /* Prevent shrinking */
         }
 
         .core-sun {
@@ -124,7 +130,7 @@
             cursor: pointer;
             transition: all 0.3s;
             z-index: 30;
-            transform: translate(-50%, -50%); /* Centers the node on its coords */
+            transform: translate(-50%, -50%);
         }
         .satellite-node:hover, .satellite-node.active { transform: translate(-50%, -50%) scale(1.2); box-shadow: 0 0 20px white; z-index: 100; }
         
@@ -160,7 +166,6 @@
             border-bottom: 1px solid white;
         }
 
-        /* Show tooltip on hover OR active class (for tap) */
         .satellite-node:hover .node-tooltip, 
         .satellite-node.active .node-tooltip {
             opacity: 1;
@@ -182,22 +187,21 @@
         }
         @keyframes flow-anim { to { stroke-dashoffset: -20; } }
 
-        /* --- ROADMAP STYLES (MOBILE RESPONSIVE) --- */
+        /* --- ROADMAP STYLES --- */
         .timeline-line {
             position: absolute;
-            left: 20px; /* Mobile: Stick to left */
+            left: 20px;
             top: 0; bottom: 0;
             width: 2px;
             background: linear-gradient(180deg, var(--cyan), var(--magenta), var(--amber));
         }
-        /* Desktop override */
         @media (min-width: 768px) {
             .timeline-line { left: 50%; transform: translateX(-50%); }
         }
 
         .timeline-dot {
             position: absolute;
-            left: 20px; /* Mobile: Match line */
+            left: 20px;
             top: 1.5rem;
             width: 1rem; height: 1rem;
             background: #000;
@@ -826,6 +830,23 @@
             // Toggle active on clicked node
             element.classList.toggle('active');
         }
+
+        // --- AUTO-CENTER SATELLITE MAP ON MOBILE ---
+        function centerMapOnMobile() {
+            const wrapper = document.querySelector('.map-wrapper');
+            const container = document.querySelector('.map-scaler');
+            
+            if (wrapper && container) {
+                // Calculate the center position
+                const scrollLeft = (container.offsetWidth - wrapper.clientWidth) / 2;
+                // Scroll to that position
+                wrapper.scrollLeft = scrollLeft;
+            }
+        }
+
+        // Run on load and resize
+        window.addEventListener('load', centerMapOnMobile);
+        window.addEventListener('resize', centerMapOnMobile);
 
         // --- TAB SWITCHING LOGIC ---
         function switchTab(tabId, btn) {
